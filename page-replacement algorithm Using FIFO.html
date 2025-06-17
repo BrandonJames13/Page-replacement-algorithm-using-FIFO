@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devil May Cry - FIFO Page Replacement Algorithm</title>
+    <style>
+        /* Importing Google Fonts for styling */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+        
+        /* Styling for the body of the document */
+        body {
+            font-family: 'Cinzel', serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #b0c4de;
+            background-color: #121212;
+            background-image: url(https://r4.wallpaperflare.com/wallpaper/539/484/958/dmc-devil-may-cry-vergil-hd-wallpaper-78e6ad5850c0cc4890ac915e18c2841a.jpg);
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        
+        /* Styling for headings */
+        h1, h2, h3 {
+            color: #1e90ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                2px 2px 4px rgba(0, 0, 0, 0.7),
+                0 0 10px rgba(30, 144, 255, 0.7);
+        }
+        
+        /* Specific styling for the main title */
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #1e90ff;
+            padding-bottom: 10px;
+        }
+        
+        /* Container styling for the main content */
+        .container {
+            background-color: rgba(30, 30, 30, 0.9);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.3);
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Styling for the input section */
+        .input-section {
+            margin-bottom: 20px;
+            background-color: rgba(20, 20, 20, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #1e90ff;
+        }
+        
+        /* Button styling */
+        .btn {
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 0;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.5);
+        }
+        
+        /* Button hover effect */
+        .btn:hover {
+            background-color: #0e76a8;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.7);
+        }
+        
+        /* Disabled button styling */
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* Input field styling */
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 0;
+            width: 80px;
+            background-color: #222;
+            color: #b0c4de;
+            font-family: 'Cinzel', serif;
+        }
+        
+        /* Styling for the reference string display */
+        .reference-string {
+            margin: 15px 0;
+            font-size: 18px;
+            background-color: rgba(20, 20, 20, 0.7);
+            padding: 15px;
+            border-radius: 0;
+            border-left: 4px solid #1e90ff;
+            overflow-wrap: break-word;
+            color: #b0c4de;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+        
+        /* Table styling for simulation results */
+        .simulation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        
+        /* Table header and cell styling */
+        .simulation-table th, .simulation-table td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        /* Header styling for the simulation table */
+        .simulation-table th {
+            background-color: #1e90ff;
+            color: white;
+        }
+        
+        /* Styling for page fault indication */
+        .page-fault {
+            background-color: rgba(30, 144, 255, 0.2);
+            color: #ff6b6b;
+        }
+        
+        /* Styling for no fault indication */
+        .no-fault {
+            background-color: rgba(0, 100, 0, 0.2);
+            color: #9acd32;
+        }
+        
+        /* Current reference styling */
+        .current-reference {
+            font-weight: bold;
+            color: #1e90ff;
+            text-shadow: 0 0 5px rgba(30, 144, 255, 0.5);
+        }
+        
+        /* Results display styling */
+        .results {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #b0c4de;
+            background-color: rgba(20, 20, 20, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #1e90ff;
+        }
+        
+        /* Page frame styling */
+        .page-frame {
+            width: 50px;
+            height: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #1e90ff;
+            margin: 2px;
+            font-weight: bold;
+            border-radius: 0;
+            background-color: rgba(20, 20, 20, 0.8);
+            text-shadow: 0 0 5px rgba(30, 144, 255, 0.5);
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        /* Step container styling for simulation steps */
+        .step-container {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            background-color: rgba(20, 20, 20, 0.5);
+            position: relative;
+            transition: all 0.3s;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+        }
+        
+        /* Hover effect for step containers */
+        .step-container:hover {
+            background-color: rgba(30, 30, 30, 0.7);
+            transform: translateY(-2px);
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.2);
+        }
+        
+        /* Instruction block styling */
+        .instruction {
+            background-color: rgba(20, 20, 20, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1e90ff;
+            position: relative;
+        }
+        
+        /* Background effect for instruction block */
+        .instruction::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* Error message styling */
+        .error {
+            color: #ff6b6b;
+            margin-top: 5px;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+        
+        /* Animation for Judgment Cut effect */
+        @keyframes judgmentCut {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* Judgment Cut styling */
+        .judgment-cut {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .judgment-cut .slash {
+            position: absolute;
+            background-color: rgba(30, 144, 255, 0.7);
+            transform-origin: center;
+        }
+        
+        .judgment-cut .slash-1 {
+            width: 100%;
+            height: 5px;
+            top: 30%;
+            transform: rotate(30deg);
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.9), 0 0 30px rgba(30, 144, 255, 0.7);
+        }
+        
+        .judgment-cut .slash-2 {
+            width: 100%;
+            height: 5px;
+            top: 50%;
+            transform: rotate(-15deg);
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.9), 0 0 30px rgba(30, 144, 255, 0.7);
+        }
+        
+        .judgment-cut .slash-3 {
+            width: 100%;
+            height: 5px;
+            top: 70%;
+            transform: rotate(45deg);
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.9), 0 0 30px rgba(30, 144, 255, 0.7);
+        }
+        
+        /* Portal effect styling */
+        .portal-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(30, 144, 255, 0) 0%, rgba(30, 144, 255, 0.2) 50%, rgba(30, 144, 255, 0) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* Animation for portal effect */
+        @keyframes portalOpen {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+        
+        /* Animation for fade in up effect */
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Animation delay for sequential appearance */
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+        
+        /* Motivation bar for style */
+        .motivation-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #1e90ff, #ff6b6b);
+            width: 0%;
+            margin: 10px 0;
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.5);
+            transition: width 1s ease-in-out;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>Devil May Cry: FIFO Page Slayer</h1>
+    
+    <!-- Judgment Cut effect container -->
+    <div class="judgment-cut" id="judgmentCut">
+        <div class="slash slash-1"></div>
+        <div class="slash slash-2"></div>
+        <div class="slash slash-3"></div>
+    </div>
+    
+    <div class="container">
+        <!-- Portal effect overlay -->
+        <div class="portal-effect" id="portalEffect"></div>
+        
+        <div class="instruction">
+            <h2>Vergil's Instructions</h2>
+            <p>Welcome to the Devil May Cry page replacement system. This demonic algorithm uses First-In-First-Out (FIFO) to slay page faults and manage the underworld of memory.</p>
+            <p>1. Select your power level (3-5 page frames)</p>
+            <p>2. Summon a random sequence of demon references (By clicking at the "Unleash FIFO Power")</p>
+            <p>3. Unleash FIFO to banish the old and welcome the new</p>
+            <div class="motivation-bar" id="motivationBar"></div>
+        </div>
+        
+        <div class="input-section">
+            <label for="pageFrames">Demon Hunter Power Level (3-5): </label>
+            <input type="number" id="pageFrames" min="3" max="5" value="3">
+            <button class="btn" id="generateBtn">Summon Demon String</button>
+            <button class="btn" id="runBtn" disabled>Unleash FIFO Power</button>
+            <div id="frameError" class="error"></div>
+        
+        <div id="referenceStringContainer" style="display: none;">
+            <h2>Demon Reference String:</h2>
+            <p class="reference-string" id="referenceString"></p>
+        </div>
+        
+        <div id="simulationResults" style="display: none;">
+            <h2>Devil's Battle Log:</h2>
+            <div id="simulationSteps"></div>
+            
+            <div class="results">
+                <p>Total Demon References: <span id="totalReferences"></span></p>
+                <p>Total Devil Triggers (Page Faults): <span id="totalFaults"></span></p>
+                <p>Devil Trigger Rate: <span id="faultRate"></span>%</p>
+                <p>Number of Page Frames: <span id="pageFramesDisplay"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Selecting DOM elements for later use
+        const pageFramesInput = document.getElementById('pageFrames');
+        const generateBtn = document.getElementById('generateBtn');
+        const runBtn = document.getElementById('runBtn');
+        const frameError = document.getElementById('frameError');
+        const referenceStringContainer = document.getElementById('referenceStringContainer');
+        const referenceStringElement = document.getElementById('referenceString');
+        const simulationResults = document.getElementById('simulationResults');
+        const simulationSteps = document.getElementById('simulationSteps');
+        const totalReferencesElement = document.getElementById('totalReferences');
+        const totalFaultsElement = document.getElementById('totalFaults');
+        const faultRateElement = document.getElementById('faultRate');
+        const pageFramesDisplay = document.getElementById('pageFramesDisplay');
+        const motivationBar = document.getElementById('motivationBar');
+        const judgmentCut = document.getElementById('judgmentCut');
+        const portalEffect = document.getElementById('portalEffect');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const toggleAudioBtn = document.getElementById('toggleAudio');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        
+        let referenceString = [];
+        let isMuted = false;
+        
+        // Function to trigger the Judgment Cut animation
+        function triggerJudgmentCut() {
+            judgmentCut.style.display = 'block';
+            judgmentCut.style.animation = 'judgmentCut 1s forwards';
+            
+            setTimeout(() => {
+                judgmentCut.style.display = 'none';
+                judgmentCut.style.animation = '';
+            }, 1000);
+        }
+        
+        // Function to trigger the portal effect
+        function triggerPortalEffect() {
+            portalEffect.style.animation = 'portalOpen 2s forwards';
+            
+            setTimeout(() => {
+                portalEffect.style.animation = '';
+            }, 2000);
+        }
+        
+        // Event listener for generating the reference string
+        generateBtn.addEventListener('click', function() {
+            const pageFrames = parseInt(pageFramesInput.value);
+            
+            // Validating the input for page frames
+            if (pageFrames < 3 || pageFrames > 5 || isNaN(pageFrames)) {
+                frameError.textContent = 'Please enter a number between 3 and 5';
+                return;
+            } else {
+                frameError.textContent = '';
+            }
+            
+            // Animated motivation bar fill
+            motivationBar.style.width = '100%';
+            
+            const stringLength = 20 + Math.floor(Math.random() * 10);
+            referenceString = [];
+            
+            // Generating a random reference string
+            for (let i = 0; i < stringLength; i++) {
+                referenceString.push(Math.floor(Math.random() * 10));
+            }
+            
+            // Displaying the generated reference string
+            referenceStringElement.textContent = referenceString.join(', ');
+            referenceStringContainer.style.display = 'block';
+            
+            runBtn.disabled = false; // Enabling the run button
+            
+            simulationResults.style.display = 'none'; // Hiding previous results
+        });
+        
+        // Event listener for running the FIFO algorithm
+        runBtn.addEventListener('click', function() {
+            const pageFrames = parseInt(pageFramesInput.value);
+            
+            // Validating the input for page frames again
+            if (pageFrames < 3 || pageFrames > 5 || isNaN(pageFrames)) {
+                frameError.textContent = 'Please enter a number between 3 and 5';
+                return;
+            } else {
+                frameError.textContent = '';
+            }
+            
+            // Trigger Judgment Cut animation
+            triggerJudgmentCut();
+            
+            // Trigger portal effect after Judgment Cut
+            setTimeout(() => {
+                triggerPortalEffect();
+                
+                // Clear previous simulation steps and display new results
+                simulationSteps.innerHTML = '';
+                fifoPageReplacement(referenceString, pageFrames);
+                simulationResults.style.display = 'block';
+                pageFramesDisplay.textContent = pageFrames;
+                
+                // Reset motivation bar
+                motivationBar.style.width = '0%';
+            }, 1000);
+        });
+        
+        // FIFO page replacement algorithm implementation
+        function fifoPageReplacement(pages, frameCount) {
+            let frames = Array(frameCount).fill(-1); // Initializing frames with -1 (empty)
+            let queue = []; // Queue to track the order of pages
+            let pageFaults = 0; // Counter for page faults
+            
+            // Iterating through each page in the reference string
+            for (let i = 0; i < pages.length; i++) {
+                const currentPage = pages[i];
+                
+                const stepContainer = document.createElement('div'); // Creating a container for each step
+                stepContainer.className = 'step-container';
+                stepContainer.classList.add(`delay-${(i % 3) + 1}`); // Add varying animation delay
+                
+                const stepHeader = document.createElement('h3'); // Header for the current step
+                stepHeader.textContent = `Combat Step ${i+1}: Demon ${currentPage} approaches`;
+                stepContainer.appendChild(stepHeader);
+                
+                let pageFound = frames.includes(currentPage); // Checking if the page is already in frames
+                
+                const beforeFrames = [...frames]; // Storing the state of frames before the operation
+                
+                if (!pageFound) {
+                    pageFaults++; // Incrementing page fault count
+                    
+                    const emptyFrameIndex = frames.indexOf(-1); // Finding an empty frame
+                    
+                    // If there's an empty frame, place the current page there
+                    if (emptyFrameIndex !== -1) {
+                        frames[emptyFrameIndex] = currentPage;
+                        queue.push(emptyFrameIndex); // Adding to the queue
+                    } else {
+                        // If no empty frame, replace the oldest page
+                        const oldestFrameIndex = queue.shift();
+                        frames[oldestFrameIndex] = currentPage;
+                        queue.push(oldestFrameIndex); // Updating the queue
+                    }
+                }
+                
+                // Displaying the frames before and after the operation
+                const framesDisplay = document.createElement('div');
+                framesDisplay.innerHTML = `
+                    <p><strong>Before:</strong></p>
+                    <div>${displayFrames(beforeFrames)}</div>
+                    <p><strong>After:</strong></p>
+                    <div>${displayFrames(frames)}</div>
+                    <p>${pageFound ? 'No Devil Trigger needed (demon already captured)' : '<span style="color: #ff6b6b; text-shadow: 0 0 10px #1e90ff;">DEVIL TRIGGER ACTIVATED!</span>'}</p>
+                    <p>Current Demon Queue (oldest to newest): [${queue.map(index => `Cage ${index+1}`).join(', ')}]</p>
+                `;
+                stepContainer.appendChild(framesDisplay);
+                
+                // Adding a mini portal effect to each step container
+                const miniPortal = document.createElement('div');
+                miniPortal.style.position = 'absolute';
+                miniPortal.style.top = '0';
+                miniPortal.style.left = '0';
+                miniPortal.style.width = '100%';
+                miniPortal.style.height = '100%';
+                miniPortal.style.boxShadow = 'inset 0 0 20px rgba(30, 144, 255, 0.3)';
+                miniPortal.style.borderRadius = '5px';
+                miniPortal.style.pointerEvents = 'none';
+                stepContainer.appendChild(miniPortal);
+                
+                simulationSteps.appendChild(stepContainer); // Adding the step to the simulation steps
+                
+                // Add delay between steps for better visual effect
+                (function(index) {
+                    setTimeout(() => {
+                        stepContainer.style.opacity = '1';
+                        stepContainer.style.transform = 'translateY(0)';
+                    }, index * 200);
+                })(i);
+            }
+            
+            // Updating the results display
+            totalReferencesElement.textContent = pages.length;
+            totalFaultsElement.textContent = pageFaults;
+            faultRateElement.textContent = ((pageFaults / pages.length) * 100).toFixed(2);
+        }
+
+        // Function to display the current state of frames
+        function displayFrames(frames) {
+            let html = '<div>';
+            
+            for (let i = 0; i < frames.length; i++) {
+                const frameContent = frames[i] === -1 ? 'Empty' : frames[i]; // Display 'Empty' for unoccupied frames
+                html += `<div class="page-frame">${frameContent}</div>`;
+            }
+            
+            html += '</div>';
+            return html; // Returning the constructed HTML for frames
+        }
+    </script>
+</body>
+</html>
